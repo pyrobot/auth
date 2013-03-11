@@ -1,10 +1,16 @@
-var http = require('http'),
+var https = require('https'),
+    fs = require('fs'),
     express = require('express'),
     passport = require('passport'),
     LocalStrategy = require('passport-local').Strategy,
     ensureLoggedIn = require('connect-ensure-login').ensureLoggedIn,
     app = express(),
     db = {};
+
+var options = {
+  key: fs.readFileSync('ryans-key.pem'),
+  cert: fs.readFileSync('ryans-cert.pem')
+};
 
 db.users = require('./users');
 
@@ -35,7 +41,7 @@ app.configure(function () {
   app.use(express.logger('dev'));
   app.use(express.bodyParser());
   app.use(express.cookieParser());
-  app.use(express.session({secret:'qkwoekqwoekpqw'}));
+  app.use(express.session({key: 'S', secret:'sauce', cookie: { secure: true, maxAge: 900000 }})); //15min
   app.use(passport.initialize());
   app.use(passport.session());
 });
@@ -63,7 +69,7 @@ app.get('/secret', ensureLoggedIn(), function (req, res) {
 
 app.post('/login', passport.authenticate('local', { successReturnToOrRedirect: '/', failureRedirect: '/login' }));
 
-var server = http.createServer(app),
+var server = https.createServer(options, app),
     serverPort = 8000;
 
 server.listen(serverPort, function () { console.log("Server started on port %s", serverPort); });
